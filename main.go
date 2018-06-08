@@ -63,6 +63,7 @@ type srv struct{}
 
 func (srv) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	if len(req.URL.Path) < 1 {
+		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 	go parser.Parse(req.URL.Path)

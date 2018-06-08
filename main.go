@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/imega/commerceml2teleport/health"
+	"github.com/imega/commerceml2teleport/parser"
 	"github.com/imega/commerceml2teleport/shutdown"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -61,5 +62,8 @@ func main() {
 type srv struct{}
 
 func (srv) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	w.Write([]byte("test"))
+	if len(req.URL.Path) < 1 {
+		return
+	}
+	go parser.Parse(req.URL.Path)
 }

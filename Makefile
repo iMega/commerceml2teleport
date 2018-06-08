@@ -8,7 +8,7 @@ GO_IMG=golang:1.10-alpine
 GOLANG_VERSION="1.10"
 GRPCURL_COMMIT="f203c2cddfe24b21f8343d989c86db68bf3872aa"
 
-build:
+build: unit
 	docker build --build-arg GRPCURL_COMMIT=$(GRPCURL_COMMIT) --build-arg GOLANG_VERSION=$(GOLANG_VERSION) -t $(IMG):$(TAG) .
 
 .PHONY: acceptance
@@ -24,6 +24,15 @@ clean:
 
 error:
 	@docker ps --filter 'status=exited' -q | xargs docker logs
+
+unit:
+	@docker run --rm -v $(CURDIR):$(CWD) -w $(CWD) $(GO_IMG) \
+		sh -c "go list ./... | grep -v 'vendor\|acceptance' | xargs go test"
+
+pretest:
+	@docker run --rm -v $(CURDIR):$(CWD) -w $(CWD) imega/gometalinter \
+		$(LINTER_FLAGS) --vendor --deadline=600s --disable=gotype --disable=gocyclo --disable=gas \
+		--exclude=/usr --exclude='api' ./...
 
 test:
 	echo units

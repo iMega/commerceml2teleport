@@ -1,0 +1,5 @@
+language: ruby
+services:
+- docker
+script:
+- make build test || make error

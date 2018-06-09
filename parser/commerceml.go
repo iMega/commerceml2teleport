@@ -1,0 +1,260 @@
+package parser
+
+import (
+	"encoding/xml"
+	"net/url"
+	"reflect"
+)
+
+var (
+	commerceMLTypes    = make(map[string]reflect.Type)
+	revCommerceMLTypes = make(map[reflect.Type]string)
+	// CommerceMLStruct   = map[string]interface{}{
+	// 	"Группа": (*Group)(nil),
+	// }
+)
+
+func RegisterType(x interface{}, name string) {
+	// if _, ok := protoTypes[name]; ok {
+	// 	// TODO: Some day, make this a panic.
+	// 	log.Printf("proto: duplicate proto type registered: %s", name)
+	// 	return
+	// }
+	t := reflect.TypeOf(x)
+	commerceMLTypes[name] = t
+	revCommerceMLTypes[t] = name
+}
+
+func CommerceMLTypeName(x interface{}) string {
+	// type xname interface {
+	// 	XXX_MessageName() string
+	// }
+	// if m, ok := x.(xname); ok {
+	// 	return m.XXX_MessageName()
+	// }
+	return revCommerceMLTypes[reflect.TypeOf(x)]
+}
+
+func CommerceMLType(name string) reflect.Type {
+	return commerceMLTypes[name]
+}
+
+type Parser interface {
+	Parse(data []byte) (err error)
+	ParseBundling(data []byte) (err error)
+}
+
+type CommerceML struct {
+	CommerceInfo xml.Name   `xml:"КоммерческаяИнформация"`
+	Version      string     `xml:"ВерсияСхемы,attr"`
+	Classifier   Classifier `xml:"Классификатор"`
+	Catalog      Catalog    `xml:"Каталог"`
+	Bundling     Bundling   `xml:"ПакетПредложений"`
+}
+
+type Group struct {
+	IdName
+	Groups     []Group    `xml:"Группы>Группа"`
+	Properties []Property `xml:"Свойства>Свойство"`
+}
+
+type Classifier struct {
+	IdName
+	Owner      Owner       `xml:"Владелец"`
+	Groups     []Group     `xml:"Группы>Группа"`
+	Properties []Property  `xml:"Свойства>Свойство"`
+	PriceTypes []PriceType `xml:"ТипыЦен"`
+}
+
+type PriceType struct {
+}
+
+type Owner struct {
+	IdName
+}
+
+type IdName struct {
+	Id   string `xml:"Ид";json:"id"`
+	Name string `xml:"Наименование";json:"name"`
+}
+
+type Property struct {
+	IdName
+	Description
+	Type            TypeProperty    `xml:"ТипЗначений"`
+	Variants        []Variant       // @since 2.05
+	RequireProperty RequireProperty `xml:"Обязательное"`
+	Multiple        bool            `xml:"Множественное"`
+	ForDocument     bool            `xml:"ДляДокументов"`  // @only 2.04
+	ForOffer        bool            `xml:"ДляПредложений"` // @only 2.04
+	ForProduct      bool            `xml:"ДляТоваров"`     // @only 2.04
+	Usage           Usage           // @since 2.05
+}
+
+type TypeProperty int
+
+const (
+	NONE TypeProperty = iota
+	DIRECTORY
+	DIGIT
+	STRING
+)
+
+func (t *TypeProperty) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
+	var content string
+	if err := d.DecodeElement(&content, &start); err != nil {
+		return err
+	}
+	*t = TypeProperty(t.Get(content))
+
+	return nil
+}
+
+func (t TypeProperty) Get(v string) TypeProperty {
+	switch v {
+	case "Справочник":
+		return DIRECTORY
+	case "Число":
+		return DIGIT
+	case "Строка":
+		return STRING
+	}
+	return NONE
+}
+
+// @since 2.05
+type Usage struct {
+	ForDocument bool `xml:"ДляДокументов"`
+	ForOffer    bool `xml:"ДляПредложений"`
+	ForProduct  bool `xml:"ДляТоваров"`
+}
+
+type Variant struct {
+	Value     string
+	Directory IdValue // @since 2.05
+}
+
+// @since 2.05
+type IdValue struct {
+	Id    string `xml:"Ид"`
+	Value string `xml:"Значение"`
+}
+
+type RequireProperty int
+
+const (
+	CATALOG RequireProperty = iota
+	DOCUMENT
+	OFFER
+)
+
+type Description struct {
+	Value string `xml:"Описание"`
+}
+
+type Catalog struct {
+	IdName
+	Classifier Classifier
+	Owner      Owner
+	Products   []Product `xml:"Товары>Товар"`
+}
+
+type Product struct {
+	IdName
+	Description
+	BarCode      string      `xml:"Штрихкод"`
+	Article      string      `xml:"Артикул"`
+	Unit         Unit        `xml:"БазоваяЕдиница"`
+	FullName     string      `xml:"Описание"`
+	Groups       []Group     `xml:"Группы"`
+	Images       []Image     `xml:"Картинка"`
+	Properties   []IdValue   `xml:"ЗначенияСвойств>ЗначенияСвойства"`
+	Taxes        []Tax       `xml:"СтавкиНалогов>СтавкаНалога"`
+	Requisites   []Requisite `xml:"ЗначенияРеквизитов>ЗначениеРеквизита"`
+	Country      string      `xml:"Страна"`
+	Brand        string      `xml:"ТорговаяМарка"`
+	OwnerBrand   Contractor  `xml:"ВладелецТорговойМарки"`
+	Manufacturer Contractor  `xml:"Изготовитель"`
+	Excises      []Excise    `xml:"Акцизы>Акциз"`
+	Components   []Component `xml:"Комплектующие>Комплектующее"`
+}
+
+type Image struct {
+	*url.URL
+}
+
+func (i *Image) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
+	var content string
+	if err := d.DecodeElement(&content, &start); err != nil {
+		return err
+	}
+	u, err := url.Parse(content)
+	if err != nil {
+		return err
+	}
+
+	*i = Image{u}
+	return nil
+}
+
+type Contractor struct {
+	IdName
+	Title    string `xml:"ОфициальноеНаименование"`
+	FullName string `xml:"ПолноеНаименование"`
+}
+
+type Excise struct {
+	Name     string  `xml:"Наименование"`
+	Sum      float32 `xml:"СуммаЗаЕдиницу"`
+	Currency string  `xml:"Валюта"`
+}
+
+type Requisite struct {
+	Name  string `xml:"Наименование"`
+	Value string `xml:"Значение"`
+}
+
+type Tax struct {
+	Name string `xml:"Наименование"`
+	Rate string `xml:"Ставка"`
+}
+
+type Unit struct {
+	Name string `xml:"НаименованиеПолное"`
+	Code int    `xml:"Код"`
+}
+
+type Component struct {
+	Product      Product `xml:"Товар"`
+	CatalogID    string  `xml:"ИдКаталога"`
+	ClassifierID string  `xml:"ИдКлассификатора"`
+	Quantity     int     `xml:"КоличествоТип"`
+}
+
+type Bundling struct {
+	IdName
+	Owner
+	CatalogID    string      `xml:"ИдКаталога"`
+	ClassifierID string      `xml:"ИдКлассификатора"`
+	PriceTypes   []PriceType `xml:"ТипыЦен"`
+	Offers       []Offer     `xml:"Предложения>Предложение"`
+}
+
+type Offer struct {
+	IdName
+	BaseUnit       string  `xml:"БазоваяЕдиница"`
+	BaseUnitCode   string  `xml:"Код,attr"`
+	BaseUnitName   string  `xml:"НаименованиеПолное,attr"`
+	BaseUnitGlobal string  `xml:"МеждународноеСокращение,attr"`
+	Prices         []Price `xml:"Цены>Цена"`
+	Quantity       float32 `xml:"Количество"`
+}
+
+type Price struct {
+	Display     string `xml:"Представление"`
+	PriceTypeID string `xml:"ИдТипаЦены"`
+	UnitPrice   string `xml:"ЦенаЗаЕдиницу"`
+	Currency    string `xml:"Валюта"`
+	Unit        string `xml:"Единица"`
+	Coefficient int    `xml:"Коэффициент"`
+}

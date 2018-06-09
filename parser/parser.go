@@ -31,7 +31,6 @@ func Parse(path string) error {
 		return fmt.Errorf("failed to find files, %s", err)
 	}
 	for _, v := range files {
-		fmt.Printf("!!!!!!!!!!!!! %s", v)
 		xmlFile, err := os.Open(v)
 		if err != nil {
 			return fmt.Errorf("failed to open file %s, %s", v, err)
@@ -49,12 +48,6 @@ func Parse(path string) error {
 			ent.Offer = xmlFile
 		}
 	}
-
-	// fmt.Println(ent.Store.Name())
-	// fmt.Println(ent.Offer.Name())
-
-	RegisterType((*Group)(nil), "Группа")
-	//RegisterType(Group{}, "Группа")
 
 	readXML(ent.Store)
 
@@ -104,36 +97,21 @@ func findXMLFiles(path string) ([]string, error) {
 func readXML(f *os.File) {
 	f.Seek(0, 0)
 	decoder := xml.NewDecoder(f)
-	var inElement string
 	for {
 		t, err := decoder.Token()
 		fmt.Printf("failed to decode, %s\n", err)
 		if t == nil {
-			fmt.Println("--------- break ----------")
 			break
 		}
 		switch se := t.(type) {
 		case xml.StartElement:
-			inElement = se.Name.Local
-			fmt.Printf("=== %s\n", se.Name.Local)
-
-			if inElement == "Группа" {
-				entityType := CommerceMLType(inElement)
+			entityType, err := CommerceMLType(se.Name.Local)
+			if err == nil {
 				entity := reflect.New(entityType.Elem()).Interface().(CommerceMLInterface)
-
 				decoder.DecodeElement(&entity, &se)
-
-				fmt.Printf("@@@ %#v\n%s\n", entity, inElement)
+				fmt.Printf("@@@ %#v\n", entity)
 				fmt.Printf("$$$ %s\n", entity.String())
-				os.Exit(0)
 			}
-			// case xml.EndElement:
-			// 	fmt.Println(se.Name)
-			// case xml.Attr:
-			// 	fmt.Println(se.Value)
-			// default:
-			// 	fmt.Println("херушки")
 		}
 	}
-	fmt.Println("End")
 }

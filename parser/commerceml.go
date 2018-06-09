@@ -2,6 +2,7 @@ package parser
 
 import (
 	"encoding/xml"
+	"fmt"
 	"net/url"
 	"reflect"
 )
@@ -35,8 +36,11 @@ func CommerceMLTypeName(x interface{}) string {
 	return revCommerceMLTypes[reflect.TypeOf(x)]
 }
 
-func CommerceMLType(name string) reflect.Type {
-	return commerceMLTypes[name]
+func CommerceMLType(name string) (reflect.Type, error) {
+	if val, ok := commerceMLTypes[name]; ok {
+		return val, nil
+	}
+	return nil, fmt.Errorf("commerceML type is not exists")
 }
 
 type CommerceMLInterface interface {
@@ -98,6 +102,8 @@ type Property struct {
 	ForProduct      bool            `xml:"ДляТоваров"`     // @only 2.04
 	Usage           Usage           // @since 2.05
 }
+
+func (c *Property) String() string { return "Свойство" }
 
 type TypeProperty int
 
@@ -265,4 +271,9 @@ type Price struct {
 	Currency    string `xml:"Валюта"`
 	Unit        string `xml:"Единица"`
 	Coefficient int    `xml:"Коэффициент"`
+}
+
+func init() {
+	RegisterType((*Group)(nil), "Группа")
+	RegisterType((*Property)(nil), "Свойство")
 }

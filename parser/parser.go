@@ -118,29 +118,13 @@ func readXML(f *os.File) {
 			fmt.Printf("=== %s\n", se.Name.Local)
 
 			if inElement == "Группа" {
+				entityType := CommerceMLType(inElement)
+				entity := reflect.New(entityType.Elem()).Interface().(CommerceMLInterface)
 
-				//var product Group
-				ct := CommerceMLType(inElement)
-				//productType := reflect.TypeOf(product) // this type of this variable is reflect.Type
-				//productPointer := reflect.New(productType) // this type of this variable is reflect.Value.
-				//productValue := productPointer.Elem()      // this type of this variable is reflect.Value.
-				//productInterface :=  // this type of this variable is interface{}
-				product2 := reflect.New(ct.Elem()).Interface().(*Group)
+				decoder.DecodeElement(&entity, &se)
 
-				//
-
-				//ct := reflect.TypeOf(gr)
-				//gr := reflect.Zero(ct).Interface()
-				//a := reflect.New(ct.Elem()).Interface().(Group)
-
-				//a.Name = "qweqweqwe"
-				//fmt.Printf("!!!   %#v\n", a)
-
-				//var entity Group
-				decoder.DecodeElement(&product2, &se)
-
-				fmt.Printf("@@@ %#v\n%s\n", product2, inElement)
-				fmt.Printf("$$$ %s\n", product2.String())
+				fmt.Printf("@@@ %#v\n%s\n", entity, inElement)
+				fmt.Printf("$$$ %s\n", entity.String())
 				os.Exit(0)
 			}
 			// case xml.EndElement:

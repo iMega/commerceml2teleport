@@ -39,6 +39,10 @@ func CommerceMLType(name string) reflect.Type {
 	return commerceMLTypes[name]
 }
 
+type CommerceMLInterface interface {
+	String() string
+}
+
 type Parser interface {
 	Parse(data []byte) (err error)
 	ParseBundling(data []byte) (err error)
@@ -56,6 +60,10 @@ type Group struct {
 	IdName
 	Groups     []Group    `xml:"Группы>Группа"`
 	Properties []Property `xml:"Свойства>Свойство"`
+}
+
+func (m *Group) String() string {
+	return "Группа"
 }
 
 type Classifier struct {

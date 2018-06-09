@@ -49,7 +49,17 @@ func Parse(path string) error {
 		}
 	}
 
-	readXML(ent.Store)
+	err = readXML(ent.Store, func(ent CommerceMLInterface) {
+		switch e := ent.(type) {
+		case *Group:
+			fmt.Println(e.Name)
+		case *Property:
+			fmt.Println(e.Name)
+		}
+	})
+	if err != nil {
+		return fmt.Errorf("failed to parse file %s, %s", "file.xml", err)
+	}
 
 	return nil
 }
@@ -94,12 +104,14 @@ func findXMLFiles(path string) ([]string, error) {
 	return files, nil
 }
 
-func readXML(f *os.File) {
+func readXML(f *os.File, cb func(ent CommerceMLInterface)) error {
 	f.Seek(0, 0)
 	decoder := xml.NewDecoder(f)
 	for {
 		t, err := decoder.Token()
-		fmt.Printf("failed to decode, %s\n", err)
+		if err != nil {
+			return fmt.Errorf("failed to decode, %s", err)
+		}
 		if t == nil {
 			break
 		}
@@ -109,9 +121,9 @@ func readXML(f *os.File) {
 			if err == nil {
 				entity := reflect.New(entityType.Elem()).Interface().(CommerceMLInterface)
 				decoder.DecodeElement(&entity, &se)
-				fmt.Printf("@@@ %#v\n", entity)
-				fmt.Printf("$$$ %s\n", entity.String())
+				cb(entity)
 			}
 		}
 	}
+	return nil
 }

@@ -14,7 +14,7 @@ RUN go build -v -o rel/app
 
 FROM golang:${GOLANG_VERSION}-alpine
 # HTTP сервер
-EXPOSE 8080
+EXPOSE 80
 # GRPC сервер
 EXPOSE 9000
 

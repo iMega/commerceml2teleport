@@ -37,7 +37,7 @@ pretest:
 test:
 	echo units
 
-release:
+release: build
 	@docker login --username $(DOCKER_USER) --password $(DOCKER_PASS)
 	@docker push $(IMG):$(TAG)
 

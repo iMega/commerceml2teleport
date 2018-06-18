@@ -37,5 +37,9 @@ pretest:
 test:
 	echo units
 
+release:
+	@docker login --username $(DOCKER_USER) --password $(DOCKER_PASS)
+	@docker push $(IMG):$(TAG)
+
 deploy:
 	@curl -s -X POST -H "TOKEN: $(DEPLOY_TOKEN)" https://d.imega.ru -d '{"namespace":"imega-teleport", "project_name":"commerceml2teleport", "tag":"$(TAG)"}'

@@ -2,7 +2,7 @@ PROJECT_NAME=imega/commerceml2teleport
 GO_PROJECT=github.com/$(PROJECT_NAME)
 CWD=/go/src/$(GO_PROJECT)
 TAG=latest
-IMG=imega/commerceml2teleport
+IMG=imegateleport/commerceml2teleport
 
 GO_IMG=golang:1.10-alpine
 GOLANG_VERSION="1.10"

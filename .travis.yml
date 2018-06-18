@@ -3,3 +3,8 @@ services:
 - docker
 script:
 - make build test || make error
+after_success:
+- |
+  [ "${TRAVIS_BRANCH}" == "master" ] && [ "$TRAVIS_EVENT_TYPE" != "cron" ] &&
+    (make release DOCKER_USER=$DOCKER_USER DOCKER_PASS=$DOCKER_PASS TAG=`echo $TRAVIS_COMMIT | cut -c -7`)
+- make deploy DEPLOY_TOKEN=$DEPLOY_TOKEN TAG=`echo $TRAVIS_COMMIT | cut -c -7`

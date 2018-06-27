@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/gorilla/mux"
 	"github.com/imega/commerceml2teleport/health"
 	"github.com/imega/commerceml2teleport/shutdown"
 	"github.com/improbable-eng/go-httpwares/logging/logrus"
@@ -33,9 +34,12 @@ func main() {
 		logger.Errorf("failed to listen on the TCP network address 0.0.0.0:9000, %s", err)
 	}
 
+	router := mux.NewRouter()
+	router.HandleFunc("/{uuid}", handler)
+
 	m := http.NewServeMux()
-	handler := &srv{}
-	m.Handle("/", handler)
+	m.Handle("/", router)
+
 	hm := http_logrus.Middleware(logger, http_logrus.WithRequestFieldExtractor(func(req *http.Request) map[string]interface{} {
 		return map[string]interface{}{
 			"http.request.x-req-id": "unset",
@@ -65,18 +69,19 @@ func main() {
 	logger.Info("server is stopped")
 }
 
-type srv struct{}
-
-func (srv) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+func handler(w http.ResponseWriter, req *http.Request) {
 	var (
 		ctx    = req.Context()
 		logger = ctxlogrus.Extract(ctx)
+		uuid   = mux.Vars(req)["uuid"]
 	)
-	if len(req.URL.Path) < 1 {
+
+	if len(uuid) < 1 {
 		logger.Errorf("url path doest not exists")
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	logger.Infof("url path is %s", req.URL.Path)
+
+	logger.Infof("url path is %s", uuid)
 	//go parser.Parse(req.URL.Path)
 }

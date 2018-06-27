@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/imega/commerceml2teleport/health"
-	"github.com/imega/commerceml2teleport/parser"
 	"github.com/imega/commerceml2teleport/shutdown"
 	"github.com/improbable-eng/go-httpwares/logging/logrus"
 	"github.com/improbable-eng/go-httpwares/logging/logrus/ctxlogrus"
@@ -79,5 +78,5 @@ func (srv) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	logger.Infof("url path is %s", req.URL.Path)
-	go parser.Parse(req.URL.Path)
+	//go parser.Parse(req.URL.Path)
 }

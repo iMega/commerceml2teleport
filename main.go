@@ -82,6 +82,5 @@ func handler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	logger.Infof("url path is %s", uuid)
 	//go parser.Parse(req.URL.Path)
 }

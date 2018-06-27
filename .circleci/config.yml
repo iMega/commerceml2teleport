@@ -1,0 +1,32 @@
+version: 2
+
+jobs:
+  build:
+    machine:
+      enabled: true
+    steps:
+      - checkout
+      - run: |
+          make build TAG=`echo $CIRCLE_SHA1 | cut -c -7`
+
+  release:
+    machine:
+      enabled: true
+    steps:
+      - checkout
+      - run: |
+          make build release DOCKER_USER=$DOCKER_USER DOCKER_PASS=$DOCKER_PASS TAG=`echo $CIRCLE_SHA1 | cut -c -7`
+          make deploy DEPLOY_TOKEN=$DEPLOY_TOKEN TAG=`echo $CIRCLE_SHA1 | cut -c -7`
+
+workflows:
+  version: 2
+  build_and_release:
+    jobs:
+      - build:
+          filters:
+            branches:
+              ignore: master
+      - release:
+          filters:
+            branches:
+              only: master

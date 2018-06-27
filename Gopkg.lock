@@ -15,10 +15,30 @@
   version = "v1.1.0"
 
 [[projects]]
+  name = "github.com/grpc-ecosystem/go-grpc-middleware"
+  packages = [
+    ".",
+    "tags"
+  ]
+  revision = "c250d6563d4d4c20252cd865923440e829844f4e"
+  version = "v1.0.0"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/improbable-eng/go-httpwares"
+  packages = [
+    ".",
+    "logging",
+    "logging/logrus",
+    "logging/logrus/ctxlogrus"
+  ]
+  revision = "4b2026451a7f3206852c08baccfa89c756d5fba3"
+
+[[projects]]
   name = "github.com/sirupsen/logrus"
   packages = ["."]
-  revision = "c155da19408a8799da419ed3eeb0cb5db0ad5dbc"
-  version = "v1.0.5"
+  revision = "f006c2ac4710855cf0f916dd6b77acf6b048dc6e"
+  version = "v1.0.3"
 
 [[projects]]
   branch = "master"
@@ -113,6 +133,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "68bfe88cbfa26ea966f5ac26290040e52db8a71f3a0de0ae8f942958d9fa5fa2"
+  inputs-digest = "1b31a286ae09b1a043ae66888a1a9478027e412732222a0d51290452cb456c7a"
   solver-name = "gps-cdcl"
   solver-version = 1

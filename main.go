@@ -9,6 +9,8 @@ import (
 	"github.com/imega/commerceml2teleport/health"
 	"github.com/imega/commerceml2teleport/parser"
 	"github.com/imega/commerceml2teleport/shutdown"
+	"github.com/improbable-eng/go-httpwares/logging/logrus"
+	"github.com/improbable-eng/go-httpwares/logging/logrus/ctxlogrus"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 )
@@ -35,9 +37,14 @@ func main() {
 	m := http.NewServeMux()
 	handler := &srv{}
 	m.Handle("/", handler)
+	hm := http_logrus.Middleware(logger, http_logrus.WithRequestFieldExtractor(func(req *http.Request) map[string]interface{} {
+		return map[string]interface{}{
+			"http.request.x-req-id": "unset",
+		}
+	}))(m)
 	s := &http.Server{
 		Addr:         "0.0.0.0:80",
-		Handler:      m,
+		Handler:      hm,
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 5 * time.Second,
 		IdleTimeout:  5 * time.Second,
@@ -62,9 +69,15 @@ func main() {
 type srv struct{}
 
 func (srv) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	var (
+		ctx    = req.Context()
+		logger = ctxlogrus.Extract(ctx)
+	)
 	if len(req.URL.Path) < 1 {
+		logger.Errorf("url path doest not exists")
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
+	logger.Infof("url path is %s", req.URL.Path)
 	go parser.Parse(req.URL.Path)
 }

@@ -2,12 +2,15 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"net"
 	"net/http"
 	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/imega/commerceml2teleport/config"
 	"github.com/imega/commerceml2teleport/health"
+	"github.com/imega/commerceml2teleport/parser"
 	"github.com/imega/commerceml2teleport/shutdown"
 	"github.com/improbable-eng/go-httpwares/logging/logrus"
 	"github.com/improbable-eng/go-httpwares/logging/logrus/ctxlogrus"
@@ -16,7 +19,8 @@ import (
 )
 
 var (
-	logger *logrus.Entry
+	logger              *logrus.Entry
+	teleportStoragePath string
 )
 
 func main() {
@@ -25,6 +29,13 @@ func main() {
 		DisableTimestamp: true,
 	})
 	logger = logrus.WithField("channel", "commerce-ml2teleport")
+
+	tsp, err := config.GetConfigValue("TELEPORT_STORAGE")
+	if err != nil {
+		logger.Fatalf("failed to read env TELEPORT_STORAGE, %s", err)
+	}
+
+	teleportStoragePath = tsp
 
 	grpcSrv := grpc.NewServer()
 	health.RegisterHealthServer(grpcSrv)
@@ -82,5 +93,9 @@ func handler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	//go parser.Parse(req.URL.Path)
+	go func() {
+		if err := parser.Parse(fmt.Sprintf("%s/%s/unziped", teleportStoragePath, uuid)); err != nil {
+			logger.Errorf("failed parse xml files, %s", err)
+		}
+	}()
 }

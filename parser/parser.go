@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"encoding/xml"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -49,16 +50,11 @@ func Parse(path string) error {
 		}
 	}
 
-	err = readXML(ent.Store, func(ent CommerceMLInterface) {
-		switch e := ent.(type) {
-		case *Group:
-			fmt.Println(e.Name)
-		case *Property:
-			fmt.Println(e.Name)
-		}
+	err = readXML(ent.Store, func(ent CommerceMLInterface) error {
+		return ent.Parse()
 	})
-	if err != nil {
-		return fmt.Errorf("failed to parse file %s, %s", "file.xml", err)
+	if err != nil && err != io.EOF {
+		return fmt.Errorf("failed to parse file %s, %s", ent.Store.Name(), err)
 	}
 
 	return nil
@@ -104,26 +100,23 @@ func findXMLFiles(path string) ([]string, error) {
 	return files, nil
 }
 
-func readXML(f *os.File, cb func(ent CommerceMLInterface)) error {
+func readXML(f *os.File, cb func(ent CommerceMLInterface) error) error {
+	var (
+		t   xml.Token
+		err error
+	)
 	f.Seek(0, 0)
 	decoder := xml.NewDecoder(f)
-	for {
-		t, err := decoder.Token()
-		if err != nil {
-			return fmt.Errorf("failed to decode, %s", err)
-		}
-		if t == nil {
-			break
-		}
-		switch se := t.(type) {
+	for t, err = decoder.Token(); err == nil; t, err = decoder.Token() {
+		switch token := t.(type) {
 		case xml.StartElement:
-			entityType, err := CommerceMLType(se.Name.Local)
+			entityType, err := CommerceMLType(token.Name.Local)
 			if err == nil {
 				entity := reflect.New(entityType.Elem()).Interface().(CommerceMLInterface)
-				decoder.DecodeElement(&entity, &se)
-				cb(entity)
+				decoder.DecodeElement(&entity, &token)
+				err = cb(entity)
 			}
 		}
 	}
-	return nil
+	return err
 }

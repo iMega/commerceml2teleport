@@ -39,5 +39,7 @@ func Test_findXMLFiles(t *testing.T) {
 
 func Test_Parse(t *testing.T) {
 	err := Parse("./fixture")
-	fmt.Printf("failed to parse file, %s\n", err)
+	if err != nil {
+		fmt.Printf("failed to parse file, %s\n", err)
+	}
 }

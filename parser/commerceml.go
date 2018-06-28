@@ -10,29 +10,15 @@ import (
 var (
 	commerceMLTypes    = make(map[string]reflect.Type)
 	revCommerceMLTypes = make(map[reflect.Type]string)
-	// CommerceMLStruct   = map[string]interface{}{
-	// 	"Группа": (*Group)(nil),
-	// }
 )
 
 func RegisterType(x interface{}, name string) {
-	// if _, ok := protoTypes[name]; ok {
-	// 	// TODO: Some day, make this a panic.
-	// 	log.Printf("proto: duplicate proto type registered: %s", name)
-	// 	return
-	// }
 	t := reflect.TypeOf(x)
 	commerceMLTypes[name] = t
 	revCommerceMLTypes[t] = name
 }
 
 func CommerceMLTypeName(x interface{}) string {
-	// type xname interface {
-	// 	XXX_MessageName() string
-	// }
-	// if m, ok := x.(xname); ok {
-	// 	return m.XXX_MessageName()
-	// }
 	return revCommerceMLTypes[reflect.TypeOf(x)]
 }
 
@@ -45,6 +31,7 @@ func CommerceMLType(name string) (reflect.Type, error) {
 
 type CommerceMLInterface interface {
 	String() string
+	Parse() error
 }
 
 type Parser interface {
@@ -66,8 +53,14 @@ type Group struct {
 	Properties []Property `xml:"Свойства>Свойство"`
 }
 
-func (m *Group) String() string {
+func (e *Group) String() string {
 	return "Группа"
+}
+
+func (e *Group) Parse() error {
+	fmt.Println(e.Name)
+	fmt.Println(e.Groups)
+	return nil
 }
 
 type Classifier struct {
@@ -103,7 +96,12 @@ type Property struct {
 	Usage           Usage           // @since 2.05
 }
 
-func (c *Property) String() string { return "Свойство" }
+func (e *Property) String() string { return "Свойство" }
+
+func (e *Property) Parse() error {
+	fmt.Println(e.Name)
+	return nil
+}
 
 type TypeProperty int
 
